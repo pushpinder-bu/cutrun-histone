@@ -1,0 +1,22 @@
+# Nextflow run files - never commit these
+work/
+.nextflow/
+.nextflow.log*
+.nextflow.pid
+timeline*.html
+report*.html
+trace*.txt
+
+# Outputs and logs
+results*/
+stub_test*/
+*.o[0-9]*
+*.e[0-9]*
+
+# Real samplesheets (contain local data paths); keep only the example in assets/
+samplesheet*.csv
+!assets/samplesheet_example.csv
+
+# OS / editor clutter
+.DS_Store
+*.swp

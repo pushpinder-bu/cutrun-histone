@@ -1,0 +1,4 @@
+sample,cell_type,mark,fastq_1,fastq_2
+MesodermptWTC11ptH3K27me3,Mesoderm,H3K27me3,/path/to/Mesoderm_H3K27me3_R1_001.fastq.gz,/path/to/Mesoderm_H3K27me3_R2_001.fastq.gz
+MesodermptWTC11ptH3K4me3,Mesoderm,H3K4me3,/path/to/Mesoderm_H3K4me3_R1_001.fastq.gz,/path/to/Mesoderm_H3K4me3_R2_001.fastq.gz
+MesodermptWTC11ptIgG,Mesoderm,IgG,/path/to/Mesoderm_IgG_R1_001.fastq.gz,/path/to/Mesoderm_IgG_R2_001.fastq.gz

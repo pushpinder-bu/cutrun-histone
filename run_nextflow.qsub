@@ -1,0 +1,15 @@
+#!/bin/bash -l
+# Runs the Nextflow controller as a small SCC job; it submits all pipeline steps as their own jobs.
+# Usage (from your project folder):  qsub /path/to/cutrun-histone/run_nextflow.qsub
+#$ -P crem-bioinfo
+#$ -N nf_head
+#$ -l h_rt=72:00:00
+#$ -pe omp 1
+#$ -j y
+#$ -cwd
+
+PIPELINE_DIR="${PIPELINE_DIR:-$HOME/cutrun-histone}"   # where you cloned this repository
+
+module load nextflow
+nextflow run "$PIPELINE_DIR/main.nf" -profile scc \
+    --input samplesheet.csv --outdir results -resume
