@@ -2,7 +2,7 @@
 
 A Nextflow pipeline for paired-end CUT&RUN histone-mark data (e.g. H3K27me3, H3K4me3 with IgG controls), set up for the BU SCC cluster.
 
-> **Version:** 0.1.0 (see [CHANGELOG](CHANGELOG.md)). **Status:** in development. Alignment and filtering are implemented; the remaining steps are being added one at a time (see [Roadmap](#roadmap)).
+> **Version:** 0.2.0 (see [CHANGELOG](CHANGELOG.md)). **Status:** in development. Alignment, filtering, bigWigs and QC are implemented; the remaining steps are being added one at a time (see [Roadmap](#roadmap)).
 
 ## What it does
 
@@ -10,8 +10,8 @@ A Nextflow pipeline for paired-end CUT&RUN histone-mark data (e.g. H3K27me3, H3K
 |---|---|---|
 | Alignment to GRCh38 (`--local`, paired-end) | bowtie2, samtools | done |
 | Sort, mark duplicates, keep uniquely mapped non-duplicate reads | sambamba, samtools | done |
-| RPGC-normalized bigWigs | deepTools `bamCoverage` | planned |
-| QC: FastQC, duplication, library complexity, MultiQC | FastQC, samtools, preseq, MultiQC | planned |
+| RPGC-normalized bigWigs | deepTools `bamCoverage` | done |
+| QC: FastQC, duplication, library complexity, MultiQC | FastQC, samtools, preseq, MultiQC | done |
 | Fingerprint plots and TSS profiles/heatmaps per cell type | deepTools | planned |
 | Peak calling against each cell type's IgG (narrow / broad) | MACS2 | planned |
 | Peak overlap tables and UpSet plots across cell types | bedtools, Python | planned |
@@ -54,14 +54,22 @@ Each step is submitted as its own SGE job (project `crem-bioinfo`, `-pe omp`, `m
 | `--input` | `samplesheet.csv` |
 | `--outdir` | `results` |
 | `--bowtie2_index` | GRCh38 bowtie2 index on `crem-bioinfo` (chr-prefixed) |
+| `--effective_genome_size` | `2913022398` (GRCh38) |
+| `--bw_bin_size` | `10` |
+| `--extend_reads` | `200` |
 
 ## Outputs
 
 ```
 results/
-└── alignment/<sample>/
-    ├── <sample>.sorted.markdup.bam(.bai)            # duplicates marked, not removed
-    └── <sample>.sorted.markdup.filtered.bam(.bai)   # final BAM used downstream
+├── alignment/<sample>/
+│   ├── <sample>.sorted.markdup.bam(.bai)            # duplicates marked, not removed
+│   └── <sample>.sorted.markdup.filtered.bam(.bai)   # final BAM used downstream
+├── bigwig/<sample>.bw                               # RPGC-normalized coverage
+└── qc/
+    ├── QC_summary.tsv                               # one row per sample
+    ├── fastqc/  flagstat/  preseq/
+    └── multiqc/multiqc_report.html
 ```
 
 Intermediate files stay in `work/`. Once a run is complete and checked, `work/` can be deleted to save space (but then `-resume` will start from scratch).
@@ -79,7 +87,7 @@ Nextflow downloads the tagged version from GitHub; no manual copy is needed.
 ## Roadmap
 
 1. Alignment and filtering ✅
-2. bigWigs and QC
+2. bigWigs and QC ✅
 3. Per-cell-type fingerprint plots and TSS profiles
 4. MACS2 peak calling with matched IgG
 5. Overlap tables and UpSet plots
@@ -89,7 +97,7 @@ Nextflow downloads the tagged version from GitHub; no manual copy is needed.
 
 If you use this pipeline, please cite:
 
-> Pushpinder Bawa. cutrun-histone: a Nextflow pipeline for CUT&RUN histone-mark analysis (version 0.1.0). https://github.com/pushpinder-bu/cutrun-histone
+> Pushpinder Bawa. cutrun-histone: a Nextflow pipeline for CUT&RUN histone-mark analysis (version 0.2.0). https://github.com/pushpinder-bu/cutrun-histone
 
 and the tools it uses, listed in [CITATIONS.md](CITATIONS.md).
 
