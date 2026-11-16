@@ -2,7 +2,7 @@
 
 A Nextflow pipeline for paired-end CUT&RUN histone-mark data (e.g. H3K27me3, H3K4me3 with IgG controls), set up for the BU SCC cluster.
 
-> **Version:** 0.2.0 (see [CHANGELOG](CHANGELOG.md)). **Status:** in development. Alignment, filtering, bigWigs and QC are implemented; the remaining steps are being added one at a time (see [Roadmap](#roadmap)).
+> **Version:** 0.3.0 (see [CHANGELOG](CHANGELOG.md)). **Status:** in development. Alignment, filtering, bigWigs and QC are implemented; the remaining steps are being added one at a time (see [Roadmap](#roadmap)).
 
 ## What it does
 
@@ -32,20 +32,26 @@ See [`assets/samplesheet_example.csv`](assets/samplesheet_example.csv).
 
 ## Running on the SCC
 
+The `scc` profile uses Nextflow's **SGE executor**: every step of every sample is submitted as its own SGE job (project `crem-bioinfo`, `-pe omp <cpus>`, `mem_per_core=8G`), with up to 50 jobs queued at once. Nextflow tracks the jobs, starts each step when its inputs are ready, and retries a step once if the scheduler kills it.
+
 ```bash
 module load nextflow
 
-# 1. Check the wiring without running anything (seconds)
-nextflow run main.nf -profile scc -stub-run --input samplesheet.csv --outdir stub_test
+# 1. Check the wiring without running anything (seconds, runs locally)
+nextflow run main.nf -profile local -stub-run --input samplesheet.csv --outdir stub_test
 
-# 2. Real run (inside tmux/screen, or submit run_nextflow.qsub)
+# 2. Real run: each step is dispatched to SGE
 nextflow run main.nf -profile scc --input samplesheet.csv --outdir results
 
 # 3. After changing inputs or code, rerun only what changed
 nextflow run main.nf -profile scc --input samplesheet.csv --outdir results -resume
 ```
 
-Each step is submitted as its own SGE job (project `crem-bioinfo`, `-pe omp`, `mem_per_core=8G`); resources and modules are set in `nextflow.config`.
+The Nextflow controller itself needs to keep running for the whole run. Either start it inside `tmux`/`screen` on a login node, or submit it as a small job with [`run_nextflow.qsub`](run_nextflow.qsub); it then submits the pipeline steps as separate jobs.
+
+### Tip: keep stub runs in their own folder
+
+`-resume` reuses results from the most recent run started in the same folder. Run `-stub-run` checks from a separate folder (e.g. `mkdir stub && cd stub`) so they never become the "most recent run" of a real analysis. To resume a specific earlier run, give its name from `nextflow log`: `-resume <run_name>`.
 
 ### Parameters
 
@@ -58,6 +64,21 @@ Each step is submitted as its own SGE job (project `crem-bioinfo`, `-pe omp`, `m
 | `--bw_bin_size` | `10` |
 | `--extend_reads` | `200` |
 
+## Reproducibility
+
+bowtie2 runs with `--reorder`, so identical inputs give identical outputs. Verified on a 43.5M read-pair H3K27me3 library: two independent runs from scratch produced the same final filtered BAM, read for read (54,219,337 reads).
+
+## Repository layout
+
+```
+main.nf                  # workflow: reads the samplesheet and connects the steps
+modules/local/*.nf       # one file per step (process)
+nextflow.config          # metadata, default parameters, profiles
+conf/base.config         # CPUs and time limits per label (process_low / medium / high)
+conf/scc.config          # BU SCC: SGE executor and environment modules
+assets/                  # example samplesheet
+```
+
 ## Outputs
 
 ```
@@ -66,10 +87,11 @@ results/
 │   ├── <sample>.sorted.markdup.bam(.bai)            # duplicates marked, not removed
 │   └── <sample>.sorted.markdup.filtered.bam(.bai)   # final BAM used downstream
 ├── bigwig/<sample>.bw                               # RPGC-normalized coverage
-└── qc/
-    ├── QC_summary.tsv                               # one row per sample
-    ├── fastqc/  flagstat/  preseq/
-    └── multiqc/multiqc_report.html
+├── qc/
+│   ├── QC_summary.tsv                               # one row per sample
+│   ├── fastqc/  flagstat/  preseq/
+│   └── multiqc/multiqc_report.html
+└── pipeline_info/                                   # timeline, resource report and trace of each run
 ```
 
 Intermediate files stay in `work/`. Once a run is complete and checked, `work/` can be deleted to save space (but then `-resume` will start from scratch).
@@ -88,16 +110,19 @@ Nextflow downloads the tagged version from GitHub; no manual copy is needed.
 
 1. Alignment and filtering ✅
 2. bigWigs and QC ✅
-3. Per-cell-type fingerprint plots and TSS profiles
-4. MACS2 peak calling with matched IgG
-5. Overlap tables and UpSet plots
-6. Merging re-sequenced FASTQs (multiple rows per sample)
+3. Modular layout (`modules/local`, `conf/`) ✅
+4. Containers for every step (Docker and Singularity profiles)
+5. Test profile on a small public dataset, with continuous integration on GitHub Actions
+6. Per-cell-type fingerprint plots and TSS profiles
+7. Peak calling with matched IgG: MACS2 (narrow or broad by mark) and SEACR
+8. Overlap tables and UpSet plots across cell types
+9. Merging re-sequenced FASTQs (multiple rows per sample)
 
 ## Citation
 
 If you use this pipeline, please cite:
 
-> Pushpinder Bawa. cutrun-histone: a Nextflow pipeline for CUT&RUN histone-mark analysis (version 0.2.0). https://github.com/pushpinder-bu/cutrun-histone
+> Pushpinder Bawa. cutrun-histone: a Nextflow pipeline for CUT&RUN histone-mark analysis (version 0.3.0). https://github.com/pushpinder-bu/cutrun-histone
 
 and the tools it uses, listed in [CITATIONS.md](CITATIONS.md).
 

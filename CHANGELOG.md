@@ -5,6 +5,19 @@ Versions follow [semantic versioning](https://semver.org): MAJOR.MINOR.PATCH.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-16
+
+### Changed
+- Processes moved from `main.nf` into `modules/local/*.nf`; `main.nf` now holds only the workflow.
+- Resource labels renamed to `process_low` / `process_medium` / `process_high` and defined once in `conf/base.config`.
+- SCC (SGE) settings moved to `conf/scc.config`; default parameters moved to `nextflow.config`.
+- The local stub-testing profile is now called `local` (the name `test` is reserved for the upcoming test dataset).
+
+### Added
+- Automatic retry (once, with doubled time limit) when the scheduler kills a job.
+- `PYTHONNOUSERSITE=1` for all tasks, so tools ignore Python packages installed in the user's home directory.
+- Run reports (timeline, resource report, trace) in `<outdir>/pipeline_info/`.
+
 ## [0.2.0] - 2026-11-12
 
 ### Added
