@@ -7,7 +7,7 @@ process FILTER_BAM {
     container "${ workflow.containerEngine in ['singularity', 'apptainer']
         ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/d9/d92b95f4b1fcff268d632d73b9adc861b0e2db41d4ac5ec1ae598f72f194b8fe/data'
         : 'community.wave.seqera.io/library/sambamba:1.0.1--f6f871dbcf29d001' }"
-    publishDir "${params.outdir}/alignment/${meta.id}", mode: 'copy'
+    publishDir path: { "${params.outdir}/alignment/${meta.id}" }, mode: 'copy'   // { } = decided per task, once meta is known
 
     input:
     tuple val(meta), path(bam)

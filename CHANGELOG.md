@@ -20,6 +20,10 @@ Versions follow [semantic versioning](https://semver.org): MAJOR.MINOR.PATCH.
 - Rows of `QC_summary.tsv` are always ordered by sample name.
 - The test profile and the `local` profile never request more CPUs than the machine has.
 
+### Fixed
+- Compatibility with Nextflow 26.x strict syntax: run-report timestamp is now a parameter (`params.trace_report_suffix`) instead of a config variable, and `FILTER_BAM`'s per-sample `publishDir` is evaluated per task. Tested on Nextflow 24.10 and 26.10.
+- CI uses `actions/checkout@v7` and `actions/upload-artifact@v7` (Node.js 24).
+
 ## [0.4.0] - 2026-11-16
 
 ### Added
