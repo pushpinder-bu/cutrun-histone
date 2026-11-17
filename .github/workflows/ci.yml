@@ -1,0 +1,52 @@
+# Continuous integration: run the pipeline on the small public test dataset on every push and pull request.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:          # allows a manual run from the Actions tab
+
+jobs:
+  stub:
+    name: Wiring check (stub run)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: nf-core/setup-nextflow@v3
+        with:
+          version: "24.04"
+      - name: Stub run with the test samplesheet
+        run: nextflow run ${GITHUB_WORKSPACE} -profile test -stub-run --outdir stub_results
+
+  test:
+    name: Test data with Docker (Nextflow ${{ matrix.NXF_VER }})
+    needs: stub
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        NXF_VER:
+          - "24.04"               # oldest version the pipeline supports (manifest.nextflowVersion)
+          - "latest-everything"   # newest release, to catch upcoming changes early
+    steps:
+      - uses: actions/checkout@v4
+      - uses: nf-core/setup-nextflow@v3
+        with:
+          version: ${{ matrix.NXF_VER }}
+      - name: Run pipeline on test data
+        run: nextflow run ${GITHUB_WORKSPACE} -profile test,docker --outdir results
+      - name: Check key outputs exist
+        run: |
+          test -s results/qc/QC_summary.tsv
+          test -s results/qc/multiqc/multiqc_report.html
+          test "$(ls results/bigwig/*.bw | wc -l)" -eq 6
+          column -t results/qc/QC_summary.tsv
+      - name: Upload logs if the run failed
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nextflow-logs-${{ matrix.NXF_VER }}
+          path: |
+            .nextflow.log
+            results/pipeline_info/
