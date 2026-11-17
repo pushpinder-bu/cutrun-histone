@@ -12,7 +12,7 @@ jobs:
     name: Wiring check (stub run)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: nf-core/setup-nextflow@v3
         with:
           version: "24.04"
@@ -30,7 +30,7 @@ jobs:
           - "24.04"               # oldest version the pipeline supports (manifest.nextflowVersion)
           - "latest-everything"   # newest release, to catch upcoming changes early
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: nf-core/setup-nextflow@v3
         with:
           version: ${{ matrix.NXF_VER }}
@@ -44,7 +44,7 @@ jobs:
           column -t results/qc/QC_summary.tsv
       - name: Upload logs if the run failed
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: nextflow-logs-${{ matrix.NXF_VER }}
           path: |
