@@ -1,32 +1,22 @@
-// QC_STATS: flagstat, preseq library complexity and a one-line QC summary per sample
+// SAMTOOLS_STATS: flagstat and a one-line QC summary per sample (read pairs, mapping, duplication, final reads)
 
-process QC_STATS {
+process SAMTOOLS_STATS {
     tag "$meta.id"
     label 'process_medium'
-    publishDir "${params.outdir}/qc", mode: 'copy', pattern: '{flagstat,preseq}/*'
+    container 'community.wave.seqera.io/library/htslib_samtools:1.25--704fb80d75745bd4'
+    publishDir "${params.outdir}/qc/flagstat", mode: 'copy', pattern: '*.flagstat.txt'
 
     input:
     tuple val(meta), path(mbam), path(mbai), path(fbam), path(fbai), path(bt2log)
 
     output:
-    path "flagstat/${meta.id}.markdup.flagstat.txt", emit: flagstat
-    path "preseq/${meta.id}.lc_extrap.txt",          emit: preseq, optional: true
-    path "${meta.id}.summary.tsv",                   emit: summary
+    path "${meta.id}.markdup.flagstat.txt", emit: flagstat
+    path "${meta.id}.summary.tsv",          emit: summary
 
     script:
     """
-    mkdir -p flagstat preseq tmp
-
     # duplication / mapping stats on the duplicate-marked BAM
-    samtools flagstat -@ ${task.cpus} ${mbam} > flagstat/${meta.id}.markdup.flagstat.txt
-
-    # library complexity; paired BAM mode, fall back to a BED of reads if needed
-    run_preseq () { out=\$1; shift; preseq lc_extrap -o "\$out" "\$@" || preseq lc_extrap -D -o "\$out" "\$@"; }
-    if ! run_preseq preseq/${meta.id}.lc_extrap.txt -P -B ${mbam}; then
-        samtools view -b -F 0x904 ${mbam} | bedtools bamtobed -i - \\
-            | sort -k1,1 -k2,2n -k3,3n -k6,6 -T tmp > tmp/reads.bed
-        run_preseq preseq/${meta.id}.lc_extrap.txt tmp/reads.bed || rm -f preseq/${meta.id}.lc_extrap.txt
-    fi
+    samtools flagstat -@ ${task.cpus} ${mbam} > ${meta.id}.markdup.flagstat.txt
 
     # one-line summary (raw read pairs come from the bowtie2 log)
     raw_pairs=\$(awk '/reads; of these:/{print \$1; exit}' ${bt2log})
@@ -41,8 +31,7 @@ process QC_STATS {
 
     stub:
     """
-    mkdir -p flagstat preseq
-    touch flagstat/${meta.id}.markdup.flagstat.txt preseq/${meta.id}.lc_extrap.txt
+    touch ${meta.id}.markdup.flagstat.txt
     echo -e "sample\\tcell_type\\tmark\\traw_read_pairs\\tprimary_reads\\tprimary_mapped\\tduplicates\\tdup_pct\\tfinal_filtered_reads" > ${meta.id}.summary.tsv
     echo -e "${meta.id}\\t${meta.cell}\\t${meta.mark}\\t0\\t0\\t0\\t0\\t0.0\\t0" >> ${meta.id}.summary.tsv
     """

@@ -8,7 +8,8 @@ include { FASTQC      } from './modules/local/fastqc'
 include { ALIGN       } from './modules/local/align'
 include { FILTER_BAM  } from './modules/local/filter_bam'
 include { BAMCOVERAGE } from './modules/local/bamcoverage'
-include { QC_STATS    } from './modules/local/qc_stats'
+include { SAMTOOLS_STATS   } from './modules/local/samtools_stats'
+include { PRESEQ_LCEXTRAP } from './modules/local/preseq_lcextrap'
 include { MULTIQC     } from './modules/local/multiqc'
 
 // =================== WORKFLOW ===================
@@ -23,30 +24,31 @@ workflow {
             tuple(meta, file(row.fastq_1, checkIfExists: true), file(row.fastq_2, checkIfExists: true))
         }
 
-    // (1) the same channel can feed several processes
+    // the same channel can feed several processes
     FASTQC(ch_reads)
     ALIGN(ch_reads)
 
     FILTER_BAM(ALIGN.out.bam)
     BAMCOVERAGE(FILTER_BAM.out.filtered)
 
-    // (2) join: line up outputs from different steps by their shared meta (same sample)
+    // join: line up outputs from different steps by their shared meta (same sample)
     ch_for_qc = FILTER_BAM.out.markdup                 // [meta, markdup.bam, .bai]
         .join(FILTER_BAM.out.filtered)                 // + [filtered.bam, .bai]
         .join(ALIGN.out.log)                           // + [bowtie2.log]
-    QC_STATS(ch_for_qc)
+    SAMTOOLS_STATS(ch_for_qc)
+    PRESEQ_LCEXTRAP(FILTER_BAM.out.markdup)
 
     // collectFile: stack every sample's one-line summary into one table
-    QC_STATS.out.summary
+    SAMTOOLS_STATS.out.summary
         .collectFile(name: 'QC_summary.tsv', keepHeader: true, skip: 1, sort: true,
                      storeDir: "${params.outdir}/qc")
 
-    // (3) mix + collect: gather QC files from all samples and steps, then run MultiQC once
+    // mix + collect: gather QC files from all samples and steps, then run MultiQC once
     ch_multiqc = FASTQC.out.reports.flatten()
         .mix(ALIGN.out.log.map { meta, log -> log })
         .mix(FILTER_BAM.out.log)
-        .mix(QC_STATS.out.flagstat)
-        .mix(QC_STATS.out.preseq)
+        .mix(SAMTOOLS_STATS.out.flagstat)
+        .mix(PRESEQ_LCEXTRAP.out.lc_extrap)
         .collect()
     MULTIQC(ch_multiqc)
 }

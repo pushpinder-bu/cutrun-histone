@@ -2,6 +2,7 @@
 
 process MULTIQC {
     label 'process_low'
+    container 'community.wave.seqera.io/library/multiqc:1.35--c17fb751507e9dfc'
     publishDir "${params.outdir}/qc/multiqc", mode: 'copy'
 
     input:

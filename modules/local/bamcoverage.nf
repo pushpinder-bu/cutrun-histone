@@ -3,6 +3,7 @@
 process BAMCOVERAGE {
     tag "$meta.id"
     label 'process_high'
+    container 'community.wave.seqera.io/library/deeptools_samtools:22ef5f45259c4336'
     publishDir "${params.outdir}/bigwig", mode: 'copy'
 
     input:

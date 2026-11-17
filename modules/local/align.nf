@@ -3,6 +3,7 @@
 process ALIGN {
     tag "$meta.id"
     label 'process_high'
+    container 'community.wave.seqera.io/library/bowtie2_htslib_samtools_pigz:e1c7af09e1513a6c'
 
     input:
     tuple val(meta), path(r1), path(r2)

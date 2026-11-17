@@ -3,6 +3,7 @@
 process FASTQC {
     tag "$meta.id"
     label 'process_medium'
+    container 'community.wave.seqera.io/library/fastqc:0.13.0--b342db7b694c9af4'
     publishDir "${params.outdir}/qc/fastqc", mode: 'copy'
 
     input:

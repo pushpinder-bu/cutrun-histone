@@ -1,8 +1,9 @@
-// FILTER_BAM: Sort, mark duplicates, keep uniquely mapped non-duplicate reads, index
+// FILTER_BAM: Sort, mark duplicates, keep uniquely mapped non-duplicate reads, index (all with sambamba)
 
 process FILTER_BAM {
     tag "$meta.id"
     label 'process_high'
+    container 'community.wave.seqera.io/library/sambamba:1.0.1--f6f871dbcf29d001'
     publishDir "${params.outdir}/alignment/${meta.id}", mode: 'copy'
 
     input:
@@ -21,7 +22,7 @@ process FILTER_BAM {
     sambamba view -h -t ${task.cpus} -f bam \\
         -F "[XS] == null and not unmapped and not duplicate" \\
         ${meta.id}.sorted.markdup.bam > ${meta.id}.sorted.markdup.filtered.bam
-    samtools index -@ ${task.cpus} ${meta.id}.sorted.markdup.filtered.bam
+    sambamba index -t ${task.cpus} ${meta.id}.sorted.markdup.filtered.bam
     """
 
     stub:
