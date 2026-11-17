@@ -1,8 +1,10 @@
 # cutrun-histone
 
+[![CI](https://github.com/pushpinder-bu/cutrun-histone/actions/workflows/ci.yml/badge.svg)](https://github.com/pushpinder-bu/cutrun-histone/actions/workflows/ci.yml)
+
 A Nextflow pipeline for paired-end CUT&RUN histone-mark data (e.g. H3K27me3, H3K4me3 with IgG controls), set up for the BU SCC cluster.
 
-> **Version:** 0.4.0 (see [CHANGELOG](CHANGELOG.md)). **Status:** in development. Alignment, filtering, bigWigs and QC are implemented, each step in its own pinned container; the remaining steps are being added one at a time (see [Roadmap](#roadmap)).
+> **Version:** 0.5.0 (see [CHANGELOG](CHANGELOG.md)). **Status:** in development. Alignment, filtering, bigWigs and QC are implemented, each step in its own pinned container; the remaining steps are being added one at a time (see [Roadmap](#roadmap)).
 
 ## What it does
 
@@ -16,6 +18,18 @@ A Nextflow pipeline for paired-end CUT&RUN histone-mark data (e.g. H3K27me3, H3K
 | Peak calling against each cell type's IgG (narrow / broad) | MACS2 | planned |
 | Peak overlap tables and UpSet plots across cell types | bedtools, Python | planned |
 | Merging re-sequenced FASTQs into an existing sample | - | planned |
+
+## Quick start: try it on test data
+
+A small public CUT&RUN dataset (GEO GSE145187: H3K27me3, H3K4me3 and IgG, 10,000 read pairs each, two replicates, aligned to hg38 chromosome 20) is built in. With [Nextflow](https://www.nextflow.io) ≥ 24.04 and Docker or Singularity installed:
+
+```bash
+git clone https://github.com/pushpinder-bu/cutrun-histone.git
+cd cutrun-histone
+nextflow run . -profile test,docker          # or: -profile test,singularity
+```
+
+It downloads the test data and a chr20 bowtie2 index, runs every step and writes results to `results_test/` in a few minutes. The same test runs automatically on GitHub Actions for every push and pull request (badge above).
 
 ## Samplesheet
 
@@ -36,6 +50,7 @@ Every step runs in its own container with a pinned tool version, so results do n
 
 | Step | Tool (version) |
 |---|---|
+| UNTAR_INDEX (only for a `.tar.gz` index) | GNU tar |
 | FASTQC | FastQC 0.13.0 |
 | ALIGN | bowtie2 2.5.5, samtools 1.24 |
 | FILTER_BAM | sambamba 1.0.1 |
@@ -48,6 +63,7 @@ Choose **where** to run and **how** software is provided with two profiles:
 
 | | Docker | Singularity / Apptainer |
 |---|---|---|
+| Test data (anywhere) | `-profile test,docker` | `-profile test,singularity` |
 | Laptop / workstation / CI | `-profile local,docker` | `-profile local,singularity` |
 | BU SCC (SGE) | – | `-profile scc,singularity` |
 
@@ -80,7 +96,7 @@ The Nextflow controller itself needs to keep running for the whole run. Either s
 |---|---|
 | `--input` | `samplesheet.csv` |
 | `--outdir` | `results` |
-| `--bowtie2_index` | GRCh38 bowtie2 index on `crem-bioinfo` (chr-prefixed); built with bowtie2, compatible with 2.5.x |
+| `--bowtie2_index` | Prefix of a bowtie2 index (e.g. `/path/hg38` for `/path/hg38.1.bt2`), or a `.tar.gz` of an index folder. Default: GRCh38 (chr-prefixed) on `crem-bioinfo` |
 | `--effective_genome_size` | `2913022398` (GRCh38) |
 | `--bw_bin_size` | `10` |
 | `--extend_reads` | `200` |
@@ -100,7 +116,9 @@ modules/local/*.nf       # one file per step (process)
 nextflow.config          # metadata, default parameters, profiles
 conf/base.config         # CPUs and time limits per label (process_low / medium / high)
 conf/scc.config          # BU SCC: SGE executor and Singularity image cache
-assets/                  # example samplesheet
+conf/test.config         # small public test dataset
+.github/workflows/ci.yml # GitHub Actions: stub run + test data with Docker
+assets/                  # example and test samplesheets
 ```
 
 ## Outputs
@@ -136,7 +154,7 @@ Nextflow downloads the tagged version from GitHub; no manual copy is needed.
 2. bigWigs and QC ✅
 3. Modular layout (`modules/local`, `conf/`) ✅
 4. Containers for every step (Docker and Singularity profiles) ✅
-5. Test profile on a small public dataset, with continuous integration on GitHub Actions
+5. Test profile on a small public dataset, with continuous integration on GitHub Actions ✅
 6. Per-cell-type fingerprint plots and TSS profiles
 7. Peak calling with matched IgG: MACS2 (narrow or broad by mark) and SEACR
 8. Overlap tables and UpSet plots across cell types
@@ -146,7 +164,7 @@ Nextflow downloads the tagged version from GitHub; no manual copy is needed.
 
 If you use this pipeline, please cite:
 
-> Pushpinder Bawa. cutrun-histone: a Nextflow pipeline for CUT&RUN histone-mark analysis (version 0.4.0). https://github.com/pushpinder-bu/cutrun-histone
+> Pushpinder Bawa. cutrun-histone: a Nextflow pipeline for CUT&RUN histone-mark analysis (version 0.5.0). https://github.com/pushpinder-bu/cutrun-histone
 
 and the tools it uses, listed in [CITATIONS.md](CITATIONS.md).
 

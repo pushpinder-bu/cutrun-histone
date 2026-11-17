@@ -35,3 +35,7 @@ If you use this pipeline, please cite it (see the README) and the tools it runs.
 
 - **MultiQC**
   Ewels P, Magnusson M, Lundin S, Käller M. MultiQC: summarize analysis results for multiple tools and samples in a single report. *Bioinformatics.* 2016;32(19):3047-3048. doi:10.1093/bioinformatics/btw354
+
+## Test data
+
+- nf-core test-datasets, `cutandrun` branch: GEO GSE145187 reads subsampled to 10,000 read pairs and an hg38 chromosome 20 bowtie2 index. https://github.com/nf-core/test-datasets/tree/cutandrun

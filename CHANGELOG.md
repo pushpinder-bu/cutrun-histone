@@ -5,6 +5,21 @@ Versions follow [semantic versioning](https://semver.org): MAJOR.MINOR.PATCH.
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-17
+
+### Added
+- `test` profile (`conf/test.config`) with a small public CUT&RUN dataset (nf-core test-datasets, GEO GSE145187, hg38 chr20): `nextflow run . -profile test,docker`.
+- GitHub Actions CI (`.github/workflows/ci.yml`): a stub run, then the test data with Docker on the oldest supported and the latest Nextflow.
+- `--bowtie2_index` accepts a `.tar.gz` of an index folder (new `UNTAR_INDEX` step) as well as an index prefix.
+- `container` and `cpus` columns in the run trace.
+- Singularity/Apptainer now uses pre-built Singularity images (as nf-core modules do) instead of converting Docker images; fixes `multiqc: command not found` under Singularity and skips the conversion step.
+
+### Changed
+- The bowtie2 index is now a tracked input of `ALIGN` (changing the index reruns alignment).
+- FastQC reports are named by sample (`<sample>_R1/_R2`) instead of by FASTQ file name.
+- Rows of `QC_summary.tsv` are always ordered by sample name.
+- The test profile and the `local` profile never request more CPUs than the machine has.
+
 ## [0.4.0] - 2026-11-16
 
 ### Added
