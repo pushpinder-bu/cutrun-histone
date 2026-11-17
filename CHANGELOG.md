@@ -5,6 +5,22 @@ Versions follow [semantic versioning](https://semver.org): MAJOR.MINOR.PATCH.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-16
+
+### Added
+- A pinned container for every process (BioContainers / Seqera community images, same tags as nf-core modules).
+- `docker` and `singularity` profiles; combine with where to run, e.g. `-profile scc,singularity` or `-profile local,docker`.
+- Singularity image cache in project space on the SCC.
+
+### Changed
+- Tool versions now come from containers instead of SCC modules: FastQC 0.13.0, bowtie2 2.5.5 + samtools 1.24, sambamba 1.0.1, samtools 1.25, deepTools 3.5.6, preseq 3.2.0, MultiQC 1.35.
+- `QC_STATS` split into `SAMTOOLS_STATS` and `PRESEQ_LCEXTRAP` (one tool per container); preseq now reads BAM directly and retries once without the defect check.
+- BAM indexing in `FILTER_BAM` uses `sambamba index` (same `.bai` output), so the step needs one tool.
+- The `local` profile never requests more CPUs than the machine has; requires Nextflow >= 24.04.
+
+### Removed
+- SCC environment modules (`module` directives). Use tag `v0.3.0` to reproduce earlier module-based runs.
+
 ## [0.3.0] - 2026-11-16
 
 ### Changed
