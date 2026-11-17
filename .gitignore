@@ -15,7 +15,7 @@ stub_test*/
 
 # Real samplesheets (contain local data paths); keep only the example in assets/
 samplesheet*.csv
-!assets/samplesheet_example.csv
+!assets/*.csv
 
 # OS / editor clutter
 .DS_Store
