@@ -3,7 +3,10 @@
 process PRESEQ_LCEXTRAP {
     tag "$meta.id"
     label 'process_medium'
-    container 'community.wave.seqera.io/library/preseq:3.2.0--c485d1f68d51de10'
+    // Singularity/Apptainer: pre-built Singularity image; Docker: the matching Docker image (same build, as in nf-core modules)
+    container "${ workflow.containerEngine in ['singularity', 'apptainer']
+        ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/49/497b9b64f7a0554e9e0eaba8b789fc8796a01f61547a52d6006774bea4b853d0/data'
+        : 'community.wave.seqera.io/library/preseq:3.2.0--c485d1f68d51de10' }"
     publishDir "${params.outdir}/qc/preseq", mode: 'copy', pattern: '*.lc_extrap.txt'
 
     // preseq sometimes fails on very low-duplication libraries: retry once without the defect check,

@@ -3,7 +3,10 @@
 process FASTQC {
     tag "$meta.id"
     label 'process_medium'
-    container 'community.wave.seqera.io/library/fastqc:0.13.0--b342db7b694c9af4'
+    // Singularity/Apptainer: pre-built Singularity image; Docker: the matching Docker image (same build, as in nf-core modules)
+    container "${ workflow.containerEngine in ['singularity', 'apptainer']
+        ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/81/816bda6dd014e810753f642611232443ddeabb2b47f9681ad43f9044816f00ff/data'
+        : 'community.wave.seqera.io/library/fastqc:0.13.0--b342db7b694c9af4' }"
     publishDir "${params.outdir}/qc/fastqc", mode: 'copy'
 
     input:
@@ -13,8 +16,11 @@ process FASTQC {
     path "*_fastqc.{zip,html}", emit: reports
 
     script:
+    // link the reads under the sample name, so reports (and MultiQC) are labelled by sample, not by file name
     """
-    fastqc -t ${task.cpus} ${r1} ${r2}
+    ln -s ${r1} ${meta.id}_R1.fastq.gz
+    ln -s ${r2} ${meta.id}_R2.fastq.gz
+    fastqc -t ${task.cpus} ${meta.id}_R1.fastq.gz ${meta.id}_R2.fastq.gz
     """
 
     stub:

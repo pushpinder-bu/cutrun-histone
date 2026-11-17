@@ -4,6 +4,7 @@
 // Processes live in modules/local/; settings and resources in nextflow.config and conf/
 // ---------------------------------------------------------------
 
+include { UNTAR_INDEX } from './modules/local/untar_index'
 include { FASTQC      } from './modules/local/fastqc'
 include { ALIGN       } from './modules/local/align'
 include { FILTER_BAM  } from './modules/local/filter_bam'
@@ -24,9 +25,17 @@ workflow {
             tuple(meta, file(row.fastq_1, checkIfExists: true), file(row.fastq_2, checkIfExists: true))
         }
 
+    // bowtie2 index: either a .tar.gz (unpacked once) or the prefix of an existing index (e.g. /path/hg38)
+    if (params.bowtie2_index.toString().endsWith('.tar.gz')) {
+        UNTAR_INDEX(file(params.bowtie2_index, checkIfExists: true))
+        ch_index = UNTAR_INDEX.out.index.collect()          // value channel: reused by every ALIGN task
+    } else {
+        ch_index = Channel.fromPath("${params.bowtie2_index}.*.bt2*", checkIfExists: true).collect()
+    }
+
     // the same channel can feed several processes
     FASTQC(ch_reads)
-    ALIGN(ch_reads)
+    ALIGN(ch_reads, ch_index)
 
     FILTER_BAM(ALIGN.out.bam)
     BAMCOVERAGE(FILTER_BAM.out.filtered)
@@ -40,7 +49,7 @@ workflow {
 
     // collectFile: stack every sample's one-line summary into one table
     SAMTOOLS_STATS.out.summary
-        .collectFile(name: 'QC_summary.tsv', keepHeader: true, skip: 1, sort: true,
+        .collectFile(name: 'QC_summary.tsv', keepHeader: true, skip: 1, sort: { it.name },   // rows ordered by sample name
                      storeDir: "${params.outdir}/qc")
 
     // mix + collect: gather QC files from all samples and steps, then run MultiQC once
