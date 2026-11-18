@@ -20,3 +20,6 @@ samplesheet*.csv
 # OS / editor clutter
 .DS_Store
 *.swp
+
+# not part of the pipeline
+Claude outputs/
