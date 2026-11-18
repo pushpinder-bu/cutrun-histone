@@ -41,7 +41,12 @@ jobs:
           test -s results/qc/QC_summary.tsv
           test -s results/qc/multiqc/multiqc_report.html
           test "$(ls results/bigwig/*.bw | wc -l)" -eq 6
+          test -s results/peaks/peak_summary.tsv
+          test -s results/overlap/H3K4me3_regions_upset.png
+          # rep2_IgG is listed twice in the test samplesheet: merged, it must have 20000 read pairs
+          grep -P '^rep2_IgG\t' results/qc/QC_summary.tsv | cut -f4 | grep -qx 20000
           column -t results/qc/QC_summary.tsv
+          column -t results/peaks/peak_summary.tsv
       - name: Upload logs if the run failed
         if: failure()
         uses: actions/upload-artifact@v7
