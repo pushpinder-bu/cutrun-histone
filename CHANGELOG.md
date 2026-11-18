@@ -5,6 +5,22 @@ Versions follow [semantic versioning](https://semver.org): MAJOR.MINOR.PATCH.
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-11-18
+
+First complete release: from FASTQ to QC, coverage, peaks and cross-cell-type overlaps.
+
+### Added
+- **Merging re-sequenced samples:** a sample may have several samplesheet rows (one per sequencing run); its FASTQs are merged (`MERGE_FASTQ`) before alignment.
+- Samplesheet checks: required columns present and non-empty; rows of one sample must agree on `cell_type` and `mark`.
+- **Peak calling against the IgG of the same cell type:**
+  - `MACS2_CALLPEAK` (paired-end fragments): broad mode for marks in `--broad_marks` (default H3K27me3), narrow mode for all others.
+  - `SEACR_CALLPEAK` (`--seacr_mode`, default stringent) on fragment coverage (`FRAGMENTS`).
+  - `PEAK_QC`: optional `--blacklist` filtering, consensus peaks (MACS2 peaks also found by SEACR), and `peaks/peak_summary.tsv` with peak counts, median width and FRiP for each set.
+- **Overlaps across cell types** for each mark (`PEAK_OVERLAP`, `UPSET_PLOT`): regions (narrow marks: merged peaks; broad marks: domains compared in fixed bins) and genes (promoter = TSS +/- `--promoter_flank`, from `PROMOTERS`), as 0/1 tables, combination counts and UpSet plots.
+- MACS2 results in the MultiQC report.
+- Parameters: `--broad_marks`, `--macs2_qvalue`, `--macs2_broad_cutoff`, `--macs2_gsize`, `--seacr_mode`, `--blacklist`, `--promoter_flank`, `--domain_merge_distance`, `--overlap_bin_size`.
+- Test profile: hg38 blacklist; `rep2_IgG` listed twice to test merging. CI checks peak, overlap and merging outputs.
+
 ## [0.6.0] - 2026-11-18
 
 ### Added

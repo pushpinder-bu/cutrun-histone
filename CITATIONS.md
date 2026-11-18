@@ -16,13 +16,14 @@ If you use this pipeline, please cite it (see the README) and the tools it runs.
 - **Sambamba**
   Tarasov A, Vilella AJ, Cuppen E, Nijman IJ, Prins P. Sambamba: fast processing of NGS alignment formats. *Bioinformatics.* 2015;31(12):2032-2034. doi:10.1093/bioinformatics/btv098
 
-## Added in upcoming steps
-
 - **deepTools**
   Ramírez F, Ryan DP, Grüning B, et al. deepTools2: a next generation web server for deep-sequencing data analysis. *Nucleic Acids Res.* 2016;44(W1):W160-W165. doi:10.1093/nar/gkw257
 
 - **MACS2**
   Zhang Y, Liu T, Meyer CA, et al. Model-based Analysis of ChIP-Seq (MACS). *Genome Biol.* 2008;9(9):R137. doi:10.1186/gb-2008-9-9-r137
+
+- **SEACR**
+  Meers MP, Tenenbaum D, Henikoff S. Peak calling by Sparse Enrichment Analysis for CUT&RUN chromatin profiling. *Epigenetics Chromatin.* 2019;12(1):42. doi:10.1186/s13072-019-0287-4
 
 - **BEDTools**
   Quinlan AR, Hall IM. BEDTools: a flexible suite of utilities for comparing genomic features. *Bioinformatics.* 2010;26(6):841-842. doi:10.1093/bioinformatics/btq033

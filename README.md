@@ -4,7 +4,7 @@
 
 A Nextflow pipeline for paired-end CUT&RUN histone-mark data (e.g. H3K27me3, H3K4me3 with IgG controls), set up for the BU SCC cluster.
 
-> **Version:** 0.6.0 (see [CHANGELOG](CHANGELOG.md)). **Status:** in development. Alignment, filtering, bigWigs, QC, fingerprint plots and TSS profiles are implemented, each step in its own pinned container; the remaining steps are being added one at a time (see [Roadmap](#roadmap)).
+> **Version:** 1.0.0 (see [CHANGELOG](CHANGELOG.md)).
 
 ## What it does
 
@@ -15,9 +15,9 @@ A Nextflow pipeline for paired-end CUT&RUN histone-mark data (e.g. H3K27me3, H3K
 | RPGC-normalized bigWigs | deepTools `bamCoverage` | done |
 | QC: FastQC, duplication, library complexity, MultiQC | FastQC, samtools, preseq, MultiQC | done |
 | Fingerprint plots and TSS profiles/heatmaps per cell type | deepTools | done |
-| Peak calling against each cell type's IgG (narrow / broad) | MACS2 | planned |
-| Peak overlap tables and UpSet plots across cell types | bedtools, Python | planned |
-| Merging re-sequenced FASTQs into an existing sample | - | planned |
+| Peak calling against each cell type's IgG: MACS2 (broad or narrow by mark), SEACR, consensus, blacklist, FRiP | MACS2, SEACR, bedtools | done |
+| Peak overlap tables and UpSet plots across cell types (regions and genes) | bedtools, Python | done |
+| Merging re-sequenced FASTQs (several samplesheet rows per sample) | coreutils | done |
 
 ## Quick start: try it on test data
 
@@ -42,6 +42,9 @@ A CSV with one row per FASTQ pair:
 | `mark` | histone mark, or `IgG` for the control |
 | `fastq_1`, `fastq_2` | full paths to R1 and R2 |
 
+- Each cell type needs one control sample (`mark` = `IgG`, or the value of `--control_mark`); every other mark of that cell type is compared against it.
+- **Re-sequenced samples:** give each sequencing run its own row with the same `sample`, `cell_type` and `mark`. The runs' FASTQs are merged before alignment; with `-resume`, only that sample (and the steps that use it) is rerun.
+
 See [`assets/samplesheet_example.csv`](assets/samplesheet_example.csv).
 
 ## Software: containers
@@ -58,6 +61,12 @@ Every step runs in its own container with a pinned tool version, so results do n
 | SAMTOOLS_STATS | samtools 1.25 |
 | PRESEQ_LCEXTRAP | preseq 3.2.0 |
 | PLOT_FINGERPRINT, TSS_PROFILE | deepTools 3.5.6 |
+| FRAGMENTS | samtools 1.25 |
+| MACS2_CALLPEAK | MACS2 2.2.9.1 |
+| SEACR_CALLPEAK | SEACR 1.3, bedtools 2.30.0 |
+| PEAK_QC, PEAK_OVERLAP | bedtools 2.31.1 |
+| MERGE_FASTQ, PROMOTERS | GNU coreutils |
+| UPSET_PLOT | Python (numpy, matplotlib; deepTools image) |
 | MULTIQC | MultiQC 1.35 |
 
 Choose **where** to run and **how** software is provided with two profiles:
@@ -106,6 +115,13 @@ The Nextflow controller itself needs to keep running for the whole run. Either s
 | `--profile_windows` | `2000,5000` (TSS ± window sizes in bp; the largest is used for the heatmap) |
 | `--heatmap_cluster_mark` | `H3K27me3` (mark used to k-means cluster the TSS heatmap) |
 | `--heatmap_kmeans` | `3` |
+| `--broad_marks` | `H3K27me3` (comma-separated; called in MACS2 broad mode, others narrow) |
+| `--macs2_qvalue` / `--macs2_broad_cutoff` | `0.01` / `0.1` |
+| `--macs2_gsize` | genome size for MACS2 (default: `--effective_genome_size`) |
+| `--seacr_mode` | `stringent` (or `relaxed`) |
+| `--blacklist` | BED of regions removed from peaks (default: none) |
+| `--promoter_flank` | `2500` (promoter = TSS ± this, for gene-level overlaps) |
+| `--domain_merge_distance` / `--overlap_bin_size` | `5000` / `5000` (broad marks: peaks joined into domains, compared in bins) |
 
 ## Reproducibility
 
@@ -123,8 +139,9 @@ nextflow.config          # metadata, default parameters, profiles
 conf/base.config         # CPUs and time limits per label (process_low / medium / high)
 conf/scc.config          # BU SCC: SGE executor and Singularity image cache
 conf/test.config         # small public test dataset
+bin/upset_plot.py        # UpSet plots (numpy + matplotlib)
 .github/workflows/ci.yml # GitHub Actions: stub run + test data with Docker
-assets/                  # example and test samplesheets
+assets/                  # example and test samplesheets; NO_FILE placeholder for optional inputs
 ```
 
 ## Outputs
@@ -137,6 +154,11 @@ results/
 ├── bigwig/<sample>.bw                               # RPGC-normalized coverage
 ├── fingerprint/<cell_type>_fingerprint.png (.tab, _metrics.txt)
 ├── tss_profiles/<cell_type>_TSS_<n>kb.png, <cell_type>_heatmap.png, <cell_type>_heatmap_clusters.bed
+├── peaks/
+│   ├── peak_summary.tsv                             # peaks, median width and FRiP per sample and peak set
+│   ├── macs2/  seacr/                               # raw peak calls
+│   └── final/<sample>.{macs2,consensus,seacr.filtered}.bed   # blacklist removed
+├── overlap/<mark>_{regions|bins|genes}_{matrix.tsv,combinations.tsv,upset.png}
 ├── qc/
 │   ├── QC_summary.tsv                               # one row per sample
 │   ├── fastqc/  flagstat/  preseq/
@@ -164,15 +186,16 @@ Nextflow downloads the tagged version from GitHub; no manual copy is needed.
 4. Containers for every step (Docker and Singularity profiles) ✅
 5. Test profile on a small public dataset, with continuous integration on GitHub Actions ✅
 6. Per-cell-type fingerprint plots and TSS profiles ✅
-7. Peak calling with matched IgG: MACS2 (narrow or broad by mark) and SEACR
-8. Overlap tables and UpSet plots across cell types
-9. Merging re-sequenced FASTQs (multiple rows per sample)
+7. Peak calling with matched IgG (MACS2 narrow/broad by mark, SEACR, consensus) and overlaps across cell types ✅
+8. Merging re-sequenced FASTQs (several rows per sample) ✅ → **v1.0.0**
+
+Possible next steps: parameter schema (`nextflow_schema.json`), integration with RNA-seq.
 
 ## Citation
 
 If you use this pipeline, please cite:
 
-> Pushpinder Bawa. cutrun-histone: a Nextflow pipeline for CUT&RUN histone-mark analysis (version 0.6.0). https://github.com/pushpinder-bu/cutrun-histone
+> Pushpinder Bawa. cutrun-histone: a Nextflow pipeline for CUT&RUN histone-mark analysis (version 1.0.0). https://github.com/pushpinder-bu/cutrun-histone
 
 and the tools it uses, listed in [CITATIONS.md](CITATIONS.md).
 
