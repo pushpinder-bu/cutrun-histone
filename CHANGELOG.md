@@ -5,6 +5,15 @@ Versions follow [semantic versioning](https://semver.org): MAJOR.MINOR.PATCH.
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-18
+
+### Added
+- `PLOT_FINGERPRINT`: deepTools fingerprint plot per cell type (all marks + IgG), with quality metrics (Jensen-Shannon distance etc.) of each mark against that cell type's IgG.
+- `TSS_PROFILE`: signal around transcription start sites per cell type: a profile plot for each window (`--profile_windows`, default 2 kb and 5 kb) and a heatmap of the largest window, k-means clustered on one mark (`--heatmap_cluster_mark`, default H3K27me3).
+- Parameters `--gene_annotation` (GTF with transcript lines, or BED of transcripts; gzipped accepted), `--control_mark`, `--profile_windows`, `--heatmap_cluster_mark`, `--heatmap_kmeans`.
+- Fingerprint and profile data in the MultiQC report.
+- Samples of each cell type are always ordered the same way in plots: IgG first, then marks alphabetically.
+
 ## [0.5.0] - 2026-11-17
 
 ### Added

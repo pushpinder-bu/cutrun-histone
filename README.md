@@ -4,7 +4,7 @@
 
 A Nextflow pipeline for paired-end CUT&RUN histone-mark data (e.g. H3K27me3, H3K4me3 with IgG controls), set up for the BU SCC cluster.
 
-> **Version:** 0.5.0 (see [CHANGELOG](CHANGELOG.md)). **Status:** in development. Alignment, filtering, bigWigs and QC are implemented, each step in its own pinned container; the remaining steps are being added one at a time (see [Roadmap](#roadmap)).
+> **Version:** 0.6.0 (see [CHANGELOG](CHANGELOG.md)). **Status:** in development. Alignment, filtering, bigWigs, QC, fingerprint plots and TSS profiles are implemented, each step in its own pinned container; the remaining steps are being added one at a time (see [Roadmap](#roadmap)).
 
 ## What it does
 
@@ -14,7 +14,7 @@ A Nextflow pipeline for paired-end CUT&RUN histone-mark data (e.g. H3K27me3, H3K
 | Sort, mark duplicates, keep uniquely mapped non-duplicate reads | sambamba, samtools | done |
 | RPGC-normalized bigWigs | deepTools `bamCoverage` | done |
 | QC: FastQC, duplication, library complexity, MultiQC | FastQC, samtools, preseq, MultiQC | done |
-| Fingerprint plots and TSS profiles/heatmaps per cell type | deepTools | planned |
+| Fingerprint plots and TSS profiles/heatmaps per cell type | deepTools | done |
 | Peak calling against each cell type's IgG (narrow / broad) | MACS2 | planned |
 | Peak overlap tables and UpSet plots across cell types | bedtools, Python | planned |
 | Merging re-sequenced FASTQs into an existing sample | - | planned |
@@ -57,6 +57,7 @@ Every step runs in its own container with a pinned tool version, so results do n
 | BAMCOVERAGE | deepTools 3.5.6 |
 | SAMTOOLS_STATS | samtools 1.25 |
 | PRESEQ_LCEXTRAP | preseq 3.2.0 |
+| PLOT_FINGERPRINT, TSS_PROFILE | deepTools 3.5.6 |
 | MULTIQC | MultiQC 1.35 |
 
 Choose **where** to run and **how** software is provided with two profiles:
@@ -100,6 +101,11 @@ The Nextflow controller itself needs to keep running for the whole run. Either s
 | `--effective_genome_size` | `2913022398` (GRCh38) |
 | `--bw_bin_size` | `10` |
 | `--extend_reads` | `200` |
+| `--gene_annotation` | GTF (with transcript lines) or BED of transcripts, for TSS profiles; gzipped accepted. Default: GRCh38 `chr.gtf` on `crem-bioinfo` |
+| `--control_mark` | `IgG` (the `mark` value used as control) |
+| `--profile_windows` | `2000,5000` (TSS ± window sizes in bp; the largest is used for the heatmap) |
+| `--heatmap_cluster_mark` | `H3K27me3` (mark used to k-means cluster the TSS heatmap) |
+| `--heatmap_kmeans` | `3` |
 
 ## Reproducibility
 
@@ -129,6 +135,8 @@ results/
 │   ├── <sample>.sorted.markdup.bam(.bai)            # duplicates marked, not removed
 │   └── <sample>.sorted.markdup.filtered.bam(.bai)   # final BAM used downstream
 ├── bigwig/<sample>.bw                               # RPGC-normalized coverage
+├── fingerprint/<cell_type>_fingerprint.png (.tab, _metrics.txt)
+├── tss_profiles/<cell_type>_TSS_<n>kb.png, <cell_type>_heatmap.png, <cell_type>_heatmap_clusters.bed
 ├── qc/
 │   ├── QC_summary.tsv                               # one row per sample
 │   ├── fastqc/  flagstat/  preseq/
@@ -155,7 +163,7 @@ Nextflow downloads the tagged version from GitHub; no manual copy is needed.
 3. Modular layout (`modules/local`, `conf/`) ✅
 4. Containers for every step (Docker and Singularity profiles) ✅
 5. Test profile on a small public dataset, with continuous integration on GitHub Actions ✅
-6. Per-cell-type fingerprint plots and TSS profiles
+6. Per-cell-type fingerprint plots and TSS profiles ✅
 7. Peak calling with matched IgG: MACS2 (narrow or broad by mark) and SEACR
 8. Overlap tables and UpSet plots across cell types
 9. Merging re-sequenced FASTQs (multiple rows per sample)
@@ -164,7 +172,7 @@ Nextflow downloads the tagged version from GitHub; no manual copy is needed.
 
 If you use this pipeline, please cite:
 
-> Pushpinder Bawa. cutrun-histone: a Nextflow pipeline for CUT&RUN histone-mark analysis (version 0.5.0). https://github.com/pushpinder-bu/cutrun-histone
+> Pushpinder Bawa. cutrun-histone: a Nextflow pipeline for CUT&RUN histone-mark analysis (version 0.6.0). https://github.com/pushpinder-bu/cutrun-histone
 
 and the tools it uses, listed in [CITATIONS.md](CITATIONS.md).
 
