@@ -20,6 +20,7 @@ First complete release: from FASTQ to QC, coverage, peaks and cross-cell-type ov
 - MACS2 results in the MultiQC report.
 - Parameters: `--broad_marks`, `--macs2_qvalue`, `--macs2_broad_cutoff`, `--macs2_gsize`, `--seacr_mode`, `--blacklist`, `--promoter_flank`, `--domain_merge_distance`, `--overlap_bin_size`.
 - Test profile: hg38 blacklist; `rep2_IgG` listed twice to test merging. CI checks peak, overlap and merging outputs.
+- If SEACR fails on a very sparse sample (e.g. `awk: Division by zero`), the run continues with no SEACR peaks for that sample and a warning, instead of stopping.
 
 ## [0.6.0] - 2026-11-18
 

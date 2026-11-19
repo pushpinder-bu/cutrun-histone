@@ -20,9 +20,15 @@ process SEACR_CALLPEAK {
     bedtools genomecov -bg -i ${fragments}      -g ${sizes} > target.bedgraph
     bedtools genomecov -bg -i ${ctrl_fragments} -g ${sizes} > control.bedgraph
 
-    # 'norm': scale the IgG to the target; mode = stringent or relaxed
-    SEACR_1.3.sh target.bedgraph control.bedgraph norm ${params.seacr_mode} ${meta.id}
-    mv ${meta.id}.${params.seacr_mode}.bed ${meta.id}.seacr.bed
+    # 'norm': scale the IgG to the target; mode = stringent or relaxed.
+    # SEACR can fail on very sparse data (e.g. "awk: Division by zero" when nothing passes its threshold).
+    # Then continue with no SEACR peaks for this sample, so its MACS2 peaks still reach the later steps.
+    if SEACR_1.3.sh target.bedgraph control.bedgraph norm ${params.seacr_mode} ${meta.id}; then
+        mv ${meta.id}.${params.seacr_mode}.bed ${meta.id}.seacr.bed
+    else
+        echo "WARNING: SEACR failed for ${meta.id} (usually too little signal); continuing with no SEACR peaks" >&2
+        : > ${meta.id}.seacr.bed
+    fi
     """
 
     stub:
